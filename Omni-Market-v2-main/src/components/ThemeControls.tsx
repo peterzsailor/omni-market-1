@@ -1,0 +1,16 @@
+"use client";
+import { useEffect, useState } from "react";
+import { Moon, Sun, Download, Share } from "lucide-react";
+
+export function ThemeToggle(){
+ const [theme,setTheme]=useState<"light"|"dark">("light");
+ useEffect(()=>{try{const saved=localStorage.getItem("omni-theme");const preferred=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";const next=(saved==="dark"||saved==="light")?saved:preferred;setTheme(next);document.documentElement.dataset.theme=next;}catch{/* Theme preference is optional. */}},[]);
+ function toggle(){const next=theme==="dark"?"light":"dark";setTheme(next);document.documentElement.dataset.theme=next;try{localStorage.setItem("omni-theme",next)}catch{/* Theme still changes for this session. */}}
+ return <button type="button" className="icon-link theme-toggle" onClick={toggle} aria-label={`Switch to ${theme==="dark"?"light":"dark"} mode`} title={`Switch to ${theme==="dark"?"light":"dark"} mode`}>{theme==="dark"?<Sun size={18}/>:<Moon size={18}/>}</button>
+}
+export function PWAControls(){
+ const [installEvent,setInstallEvent]=useState<any>(null); const [installed,setInstalled]=useState(false); const [online,setOnline]=useState(true); const [ios,setIos]=useState(false); const [showIosHelp,setShowIosHelp]=useState(false);
+ useEffect(()=>{setOnline(navigator.onLine);setIos(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!("standalone" in navigator&&Boolean((navigator as Navigator&{standalone?:boolean}).standalone)));const onlineFn=()=>setOnline(true),offlineFn=()=>setOnline(false),installFn=(e:Event)=>{e.preventDefault();setInstallEvent(e)},installedFn=()=>{setInstalled(true);setInstallEvent(null)};window.addEventListener("online",onlineFn);window.addEventListener("offline",offlineFn);window.addEventListener("beforeinstallprompt",installFn);window.addEventListener("appinstalled",installedFn);if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{});return()=>{window.removeEventListener("online",onlineFn);window.removeEventListener("offline",offlineFn);window.removeEventListener("beforeinstallprompt",installFn);window.removeEventListener("appinstalled",installedFn)};},[]);
+ async function install(){if(!installEvent)return;await installEvent.prompt();setInstallEvent(null)}
+ return <div className="pwa-controls" aria-live="polite">{!online&&<span className="offline-pill"><span/> Offline mode · some features need internet</span>}{installEvent&&!installed&&<button type="button" onClick={install} className="install-button"><Download size={15}/> Install app</button>}{ios&&!installed&&<button type="button" onClick={()=>setShowIosHelp(v=>!v)} className="install-button"><Share size={15}/> Install guide</button>}{showIosHelp&&<div className="max-w-[280px] rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 text-sm text-[var(--text)] shadow-xl"><p className="font-semibold">Add Omni Market to your Home Screen</p><p className="mt-2 leading-5 text-[var(--muted)]">In Safari, tap Share, then choose “Add to Home Screen” and confirm.</p><button type="button" onClick={()=>setShowIosHelp(false)} className="mt-3 text-xs font-semibold text-[var(--brand)] underline">Dismiss</button></div>}</div>
+}
